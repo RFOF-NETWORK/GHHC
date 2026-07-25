@@ -348,14 +348,47 @@
                 }
             }
 
+            class QRFOFCoreEngine {
+            constructor() {
+                this.currentState = "viewLoggedOut";
+                this.currentUser = null;
+                this.trilogyData = null;
+                this.customAssets = [];
+                this.initEngine();
+            }
+
             initEngine() {
                 this.logToBox("loggedOutHistory", "[INIT] Trilogischer Fusions-Knotenpunkt aktiv.");
                 this.logToBox("loggedOutHistory", "[SYSTEM] Speicher-Integrität unmanipulativ online.");
-                this.updateUIStatusBar();
                 
+                // Automatische Wiederherstellung der Sitzung beim Neuladen, solange kein Logout erfolgt ist
+                const activeUser = localStorage.getItem("GHHC_ACTIVE_SESSION");
+                if (activeUser) {
+                    const storedData = localStorage.getItem(`GHHC_USER_${activeUser}`);
+                    if (storedData) {
+                        this.currentUser = activeUser;
+                        this.trilogyData = JSON.parse(storedData);
+                        
+                        setTimeout(() => {
+                            const activeUserEl = document.getElementById("activeUser");
+                            const balanceExpEl = document.getElementById("balanceEXP");
+                            const balanceFiatEl = document.getElementById("balanceFIAT");
+
+                            if (activeUserEl) activeUserEl.innerText = this.currentUser;
+                            if (balanceExpEl) balanceExpEl.innerText = this.trilogyData.balance.toFixed(4);
+                            if (balanceFiatEl) balanceFiatEl.innerText = "$" + (this.trilogyData.balance * 42.12).toFixed(2);
+                            
+                            this.switchView("viewLoggedIn");
+                            this.updateUIStatusBar();
+                            this.logToBox("terminalLog", `[RELOAD] Sitzung für Validator ${this.currentUser} nahtlos wiederhergestellt.`);
+                        }, 50);
+                    }
+                }
+
                 if(localStorage.getItem("GHHC_LAST_HASH")) {
                     this.logToBox("loggedOutHistory", "[LOAD] Vorhandene Block-History erkannt. Bereit für Synchronisation.");
                 }
+                this.updateUIStatusBar();
             }
 
             async generateTrilogyBlock(user, pass, phrase1, phrase2) {
@@ -412,6 +445,14 @@
                 localStorage.setItem(`GHHC_USER_${user}`, JSON.stringify(userData));
                 localStorage.setItem("GHHC_LAST_HASH", block.currHash);
                 localStorage.setItem("GHHC_LAST_USER", user);
+                localStorage.setItem("GHHC_ACTIVE_SESSION", user);
+
+                // Genesis-Admin-Prüfung: Der allererste User wird als System-Genesis verankert
+                if(!localStorage.getItem("GHHC_GENESIS_SET")) {
+                    localStorage.setItem("GHHC_GENESIS_SET", user);
+                    this.logToBox("loggedOutHistory", `[GENESIS] ${user} als erster System-Administrator und Genesis-Block verifiziert.`);
+                }
+            }
                 
                 // Live Aktualisierung der Takt-History im ausgeloggten Zustand
                 this.logToBox("loggedOutHistory", `[SUCCESS] Block verknüpft! CLONE_ID: ${block.cloneId}`);
@@ -433,16 +474,29 @@
                 const user = document.getElementById("authUser").value.trim();
                 const pass = document.getElementById("authPass").value.trim();
                 const storedData = localStorage.getItem(`GHHC_USER_${user}`);
+                
                 if (!storedData) {
                     alert("Knoten-Zugriff verweigert: Identität unbekannt. Bitte erst registrieren.");
                     return;
                 }
+                
                 this.trilogyData = JSON.parse(storedData);
                 this.currentUser = user;
                 
                 document.getElementById("activeUser").innerText = this.currentUser;
                 document.getElementById("balanceEXP").innerText = this.trilogyData.balance.toFixed(4);
                 document.getElementById("balanceFIAT").innerText = "$" + (this.trilogyData.balance * 42.12).toFixed(2);
+                
+                // Sitzung persistent im Storage verankern, damit ein Reload den Login erhält
+                localStorage.setItem("GHHC_ACTIVE_SESSION", user);
+                localStorage.setItem("GHHC_LAST_USER", user);
+                
+                // Genesis-Admin-Prüfung (Der allererste User im System ist der Genesis-Validator)
+                if(!localStorage.getItem("GHHC_GENESIS_SET")) {
+                    localStorage.setItem("GHHC_GENESIS_SET", user);
+                    this.logToBox("terminalLog", `[GENESIS] ${user} wurde als erster Knoten verifiziert und agiert als Genesis-Admin.`);
+                }
+
                 this.switchView("viewLoggedIn");
                 this.updateUIStatusBar();
                 this.logToBox("terminalLog", `[SYSTEM] Authentifiziert. Willkommen im Schattenkollektiv, Validator ${this.currentUser}.`);
@@ -450,13 +504,14 @@
             }
 
             logout() {
-                this.logToBox("loggedOutHistory", `[INFO] Simultaner kontrollierter Logout durch menschliche Interaktion erfolgt.`);
+                localStorage.removeItem("GHHC_ACTIVE_SESSION"); // Aktive Sitzung restlos löschen
+                this.logToBox("loggedOutHistory", "[INFO] Simultaner kontrollierter Logout durch menschliche Interaktion erfolgt.");
                 this.currentUser = null;
                 this.trilogyData = null;
                 this.switchView("viewLoggedOut");
                 this.updateUIStatusBar();
             }
-
+        
             unlockSeeds() {
                 const verifyPass = document.getElementById("safePassVerify").value;
                 if (!verifyPass || !this.currentUser) return;
