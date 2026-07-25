@@ -340,14 +340,13 @@
                 this.trilogyData = null;
                 this.customAssets = [];
                 this.initEngine();
-            }
 
-            // Direkt nach dem Laden prüfen, ob ein aktiver Benutzer im Speicher liegt
-            const lastUser = localStorage.getItem("GHHC_LAST_USER");
-            if (lastUser && localStorage.getItem(`GHHC_USER_${lastUser}`)) {
-                document.getElementById("authUser").value = lastUser;
-                // Optional: Automatischen Login beim Reload triggern, solange kein Logout gedrückt wurde
-           }
+                // Korrekt im Konstruktor platziert: Letzten Benutzer automatisch wiederherstellen
+                const lastUser = localStorage.getItem("GHHC_LAST_USER");
+                if (lastUser && localStorage.getItem(`GHHC_USER_${lastUser}`)) {
+                    document.getElementById("authUser").value = lastUser;
+                }
+            }
 
             initEngine() {
                 this.logToBox("loggedOutHistory", "[INIT] Trilogischer Fusions-Knotenpunkt aktiv.");
@@ -412,6 +411,7 @@
 
                 localStorage.setItem(`GHHC_USER_${user}`, JSON.stringify(userData));
                 localStorage.setItem("GHHC_LAST_HASH", block.currHash);
+                localStorage.setItem("GHHC_LAST_USER", user);
                 
                 // Live Aktualisierung der Takt-History im ausgeloggten Zustand
                 this.logToBox("loggedOutHistory", `[SUCCESS] Block verknüpft! CLONE_ID: ${block.cloneId}`);
