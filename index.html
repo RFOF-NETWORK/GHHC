@@ -533,7 +533,7 @@
                 }
             }
 
-            updateUIStatusBar() {
+                        updateUIStatusBar() {
                 if (this.currentUser && this.trilogyData) {
                     document.getElementById("sysCloneId").innerText = this.trilogyData.cloneId;
                     document.getElementById("sysPrevHash").innerText = this.trilogyData.prevHash.substring(0, 8).toUpperCase();
@@ -548,8 +548,15 @@
                     document.getElementById("sysTrilogyStatus").style.color = "#ff0000";
                 }
             }
-          logToBox(boxId, msg) {
-            const box = document.getElementById(boxId);
-            if(box) {
-              box.innerHTML += \n[${new Date().toLocaleTimeString()}] ${msg};
-            box.scrollTop = box.scrollHeight;}}}// Instanziierung des globalen Kernelsconst coreEngine = new QRFOFCoreEngine();
+
+            logToBox(boxId, msg) {
+                const box = document.getElementById(boxId);
+                if(box) {
+                    box.innerHTML += `\n[${new Date().toLocaleTimeString()}] ${msg}`;
+                    box.scrollTop = box.scrollHeight;
+                }
+            }
+        }
+
+        // Instanziierung des globalen Kernels
+        const coreEngine = new QRFOFCoreEngine();
