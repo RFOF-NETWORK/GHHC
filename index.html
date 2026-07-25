@@ -342,6 +342,13 @@
                 this.initEngine();
             }
 
+            // Direkt nach dem Laden prüfen, ob ein aktiver Benutzer im Speicher liegt
+            const lastUser = localStorage.getItem("GHHC_LAST_USER");
+            if (lastUser && localStorage.getItem(`GHHC_USER_${lastUser}`)) {
+                document.getElementById("authUser").value = lastUser;
+                // Optional: Automatischen Login beim Reload triggern, solange kein Logout gedrückt wurde
+           }
+
             initEngine() {
                 this.logToBox("loggedOutHistory", "[INIT] Trilogischer Fusions-Knotenpunkt aktiv.");
                 this.logToBox("loggedOutHistory", "[SYSTEM] Speicher-Integrität unmanipulativ online.");
